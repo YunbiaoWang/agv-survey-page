@@ -64,7 +64,10 @@
         assistant: {
           title: 'AgV Survey',
           description: 'McGill University · HMTS Lab',
-          persistence: 'localStorage'
+          persistence: 'localStorage',
+          // Table and list styling inside the chat window (rules from the 2026-10-13 display test):
+          // shaded 40% row-label column, darker borders, 15px table text, hollow sub-bullets, plain rules.
+          stylesheet: 'data:text/css;base64,LnZmcmMtbWVzc2FnZSAubWFya2Rvd24gdGFibGUgeyBmb250LXNpemU6IDE1cHg7IH0KLnZmcmMtbWVzc2FnZSAubWFya2Rvd24gdGgsIC52ZnJjLW1lc3NhZ2UgLm1hcmtkb3duIHRkIHsgYm9yZGVyLWNvbG9yOiByZ2JhKDI2LCAzMCwgMzUsIDAuMzUpOyB9Ci52ZnJjLW1lc3NhZ2UgLm1hcmtkb3duIHRyID4gOmZpcnN0LWNoaWxkIHsgYmFja2dyb3VuZC1jb2xvcjogI2UyZTVlODsgd2lkdGg6IDQwJTsgfQoudmZyYy1tZXNzYWdlIC5tYXJrZG93biB1bCB1bCB7IG1hcmdpbi10b3A6IDRweDsgcGFkZGluZy1sZWZ0OiAxOHB4OyB9Ci52ZnJjLW1lc3NhZ2UgLm1hcmtkb3duIHVsIHVsID4gbGkgeyBtYXJnaW4tdG9wOiAycHg7IG1hcmdpbi1ib3R0b206IDJweDsgfQoudmZyYy1tZXNzYWdlIC5tYXJrZG93biB1bCB1bCA+IGxpOjpiZWZvcmUgeyBiYWNrZ3JvdW5kLWNvbG9yOiB0cmFuc3BhcmVudDsgYm9yZGVyOiAxcHggc29saWQgY3VycmVudENvbG9yOyB3aWR0aDogM3B4OyBoZWlnaHQ6IDNweDsgfQoudmZyYy1tZXNzYWdlIC5tYXJrZG93biBociB7IGJvcmRlcjogMDsgYm9yZGVyLXRvcDogMXB4IHNvbGlkIHJnYmEoMjYsIDMwLCAzNSwgMC4zKTsgaGVpZ2h0OiAwOyBtYXJnaW46IDEycHggMDsgfQ=='
         },
         render: { mode: 'overlay' },
         autostart: true
