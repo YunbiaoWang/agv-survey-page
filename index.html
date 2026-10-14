@@ -36,14 +36,19 @@
 
 <script type="text/javascript">
 // The participant's own code decides the session id, so the answers can be read
-// back afterwards under that code. Prolific appends it to the link; the fallback
-// keeps the page usable for a pilot or a link opened without one.
+// back afterwards under that code. Prolific appends it to the link. A link opened
+// without one gets an id kept in this browser: a reload resumes the same session,
+// and each tester on another browser gets an id of their own.
 (function () {
   var q = new URLSearchParams(window.location.search);
   var pid = q.get('PROLIFIC_PID') || q.get('prolific_pid') || q.get('pid') || '';
   pid = pid.trim().replace(/[^A-Za-z0-9_-]/g, '');
   if (!pid) {
-    pid = 'anon-' + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+    try { pid = window.localStorage.getItem('agv_anon_id') || ''; } catch (e) {}
+    if (!pid) {
+      pid = 'anon-' + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+      try { window.localStorage.setItem('agv_anon_id', pid); } catch (e) {}
+    }
   }
   window.__SESSION_ID__ = pid;
   document.getElementById('who').textContent = 'Session ' + pid;
