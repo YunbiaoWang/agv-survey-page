@@ -6,29 +6,33 @@
 <title>AgV Survey — HMTS Lab, McGill University</title>
 <style>
   :root { color-scheme: light; }
+  html, body { height: 100%; }
   body {
-    margin: 0; min-height: 100vh;
+    margin: 0;
     font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #1d1d1f; background: #f5f5f7;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 24px; box-sizing: border-box;
+    display: flex; flex-direction: column;
   }
-  /* centring lives on this page's own text only: the chat widget inherits from
-     body, and a centred body turns every survey question into centred text */
-  .page { text-align: center; max-width: 34rem; }
-  h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 8px; }
-  p  { margin: 0 0 4px; color: #4a4a4f; }
-  .small { font-size: .85rem; color: #6e6e73; margin-top: 16px; }
+  /* one slim line above the chat: who runs the survey, and the session code for support requests */
+  .top {
+    flex: 0 0 auto; width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box;
+    padding: 6px 16px; display: flex; justify-content: space-between; gap: 12px;
+    font-size: .8rem; color: #6e6e73;
+  }
+  /* the survey chat fills the rest of the screen: a centred column on a computer, the full width on a phone */
+  #vf {
+    flex: 1 1 auto; min-height: 0; width: 100%; max-width: 720px; margin: 0 auto;
+    background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06);
+  }
 </style>
 </head>
 <body>
 
-<div class="page">
-  <h1>AgV Survey</h1>
-  <p>Human-Machine Transportation Systems Lab, McGill University</p>
-  <p>The survey opens in the chat window. If it does not appear, use the button in the corner.</p>
-  <p class="small" id="who"></p>
+<div class="top">
+  <span>Human-Machine Transportation Systems Lab, McGill University</span>
+  <span id="who"></span>
 </div>
+<div id="vf"></div>
 
 <script type="text/javascript">
 // The participant's own code decides the session id, so the answers can be read
@@ -62,14 +66,13 @@
           }
         },
         assistant: {
-          title: 'AgV Survey',
-          description: 'McGill University · HMTS Lab',
           persistence: 'localStorage',
           // Table and list styling inside the chat window (rules from the 2026-10-13 display test):
           // shaded 40% row-label column, darker borders, 15px table text, hollow sub-bullets, plain rules.
           stylesheet: 'data:text/css;base64,LnZmcmMtbWVzc2FnZSAubWFya2Rvd24gdGFibGUgeyBmb250LXNpemU6IDE1cHg7IH0KLnZmcmMtbWVzc2FnZSAubWFya2Rvd24gdGgsIC52ZnJjLW1lc3NhZ2UgLm1hcmtkb3duIHRkIHsgYm9yZGVyLWNvbG9yOiByZ2JhKDI2LCAzMCwgMzUsIDAuMzUpOyB9Ci52ZnJjLW1lc3NhZ2UgLm1hcmtkb3duIHRyID4gOmZpcnN0LWNoaWxkIHsgYmFja2dyb3VuZC1jb2xvcjogI2UyZTVlODsgd2lkdGg6IDQwJTsgfQoudmZyYy1tZXNzYWdlIC5tYXJrZG93biB1bCB1bCB7IG1hcmdpbi10b3A6IDRweDsgcGFkZGluZy1sZWZ0OiAxOHB4OyB9Ci52ZnJjLW1lc3NhZ2UgLm1hcmtkb3duIHVsIHVsID4gbGkgeyBtYXJnaW4tdG9wOiAycHg7IG1hcmdpbi1ib3R0b206IDJweDsgfQoudmZyYy1tZXNzYWdlIC5tYXJrZG93biB1bCB1bCA+IGxpOjpiZWZvcmUgeyBiYWNrZ3JvdW5kLWNvbG9yOiB0cmFuc3BhcmVudDsgYm9yZGVyOiAxcHggc29saWQgY3VycmVudENvbG9yOyB3aWR0aDogM3B4OyBoZWlnaHQ6IDNweDsgfQoudmZyYy1tZXNzYWdlIC5tYXJrZG93biBociB7IGJvcmRlcjogMDsgYm9yZGVyLXRvcDogMXB4IHNvbGlkIHJnYmEoMjYsIDMwLCAzNSwgMC4zKTsgaGVpZ2h0OiAwOyBtYXJnaW46IDEycHggMDsgfQ=='
         },
-        render: { mode: 'overlay' },
+        // the chat is drawn inside #vf instead of a floating corner window
+        render: { mode: 'embedded', target: d.getElementById('vf') },
         autostart: true
       });
     };
