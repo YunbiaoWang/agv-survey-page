@@ -41,6 +41,18 @@
 // and each tester on another browser gets an id of their own.
 (function () {
   var q = new URLSearchParams(window.location.search);
+  // ?new=1 starts this device over for a tester: it forgets the stored chat and the stored test ID,
+  // then drops the flag from the address so that a reload resumes the new session.
+  if (q.get('new') === '1') {
+    try {
+      Object.keys(window.localStorage).forEach(function (k) {
+        if (k.indexOf('voiceflow-session') === 0 || k === 'agv_anon_id') { window.localStorage.removeItem(k); }
+      });
+    } catch (e) {}
+    q.delete('new');
+    var rest = q.toString();
+    try { window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash); } catch (e) {}
+  }
   var pid = q.get('PROLIFIC_PID') || q.get('prolific_pid') || q.get('pid') || '';
   pid = pid.trim().replace(/[^A-Za-z0-9_-]/g, '');
   if (!pid) {
