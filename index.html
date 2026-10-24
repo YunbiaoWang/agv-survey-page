@@ -41,14 +41,22 @@
 // and each tester on another browser gets an id of their own.
 (function () {
   var q = new URLSearchParams(window.location.search);
+  // The Voiceflow environment the chat runs on. A device whose stored chat came from another
+  // environment starts over once, as with ?new=1, because that chat cannot be resumed here.
+  var ENV = 'v11dev';
+  var envKept = '';
+  try { envKept = window.localStorage.getItem('agv_env') || ''; } catch (e) {}
   // ?new=1 starts this device over for a tester: it forgets the stored chat and the stored test ID,
   // then drops the flag from the address so that a reload resumes the new session.
-  if (q.get('new') === '1') {
+  if (q.get('new') === '1' || envKept !== ENV) {
     try {
       Object.keys(window.localStorage).forEach(function (k) {
         if (k.indexOf('voiceflow-session') === 0 || k === 'agv_anon_id') { window.localStorage.removeItem(k); }
       });
+      window.localStorage.setItem('agv_env', ENV);
     } catch (e) {}
+  }
+  if (q.get('new') === '1') {
     q.delete('new');
     var rest = q.toString();
     try { window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash); } catch (e) {}
@@ -71,6 +79,9 @@
       window.voiceflow.chat.load({
         verify: { projectID: '6aa7349f130c224030db4c18' },
         url: 'https://general-runtime.voiceflow.com',
+        // that environment's published version
+        environmentID: ENV,
+        versionVariant: 'published',
         userID: window.__SESSION_ID__,
         launch: {
           event: {
