@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgV Trust Survey - HMTS Lab, McGill University</title>
+<style>
+  :root { color-scheme: light; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1d1d1f; background: #f5f5f7;
+    display: flex; flex-direction: column;
+  }
+  .top {
+    flex: 0 0 auto; width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box;
+    padding: 6px 16px; display: flex; justify-content: space-between; gap: 12px;
+    font-size: .8rem; color: #6e6e73;
+  }
+  #vf {
+    flex: 1 1 auto; min-height: 0; width: 100%; max-width: 720px; margin: 0 auto;
+    background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06);
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <span>Human-Machine Transportation Systems Lab, McGill University</span>
+  <span id="who"></span>
+</div>
+<div id="vf"></div>
+
+<script type="text/javascript">
+// The participant's Prolific ID (appended to the link by Prolific) is the session's user ID, so the
+// answers can be read back under it and a reopened link resumes the same session. A link opened
+// without one gets an id kept in this browser, for testers.
+(function () {
+  var q = new URLSearchParams(window.location.search);
+  // The Voiceflow environment the chat runs on. A device whose stored chat came from another
+  // environment starts over once, as with ?new=1.
+  var ENV = 'agv-trust';
+  var envKept = '';
+  try { envKept = window.localStorage.getItem('agvt_env') || ''; } catch (e) {}
+  // ?new=1 starts this device over for a tester: it forgets the stored chat and the stored test ID,
+  // then drops the flag from the address so that a reload resumes the new session.
+  if (q.get('new') === '1' || envKept !== ENV) {
+    try {
+      Object.keys(window.localStorage).forEach(function (k) {
+        if (k.indexOf('voiceflow-session') === 0 || k === 'agvt_anon_id') { window.localStorage.removeItem(k); }
+      });
+      window.localStorage.setItem('agvt_env', ENV);
+    } catch (e) {}
+  }
+  if (q.get('new') === '1') {
+    q.delete('new');
+    var rest = q.toString();
+    try { window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash); } catch (e) {}
+  }
+  var pid = q.get('PROLIFIC_PID') || q.get('prolific_pid') || q.get('pid') || '';
+  pid = pid.trim().replace(/[^A-Za-z0-9_-]/g, '');
+  if (!pid) {
+    try { pid = window.localStorage.getItem('agvt_anon_id') || ''; } catch (e) {}
+    if (!pid) {
+      pid = 'anon-' + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+      try { window.localStorage.setItem('agvt_anon_id', pid); } catch (e) {}
+    }
+  }
+  window.__SESSION_ID__ = pid;
+  document.getElementById('who').textContent = 'Session ' + pid;
+
+  (function (d, t) {
+    var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+    v.onload = function () {
+      window.voiceflow.chat.load({
+        verify: { projectID: '6aa7349f130c224030db4c18' },
+        url: 'https://general-runtime.voiceflow.com',
+        environmentID: ENV,
+        versionVariant: 'published',
+        userID: window.__SESSION_ID__,
+        launch: {
+          event: {
+            type: 'launch',
+            payload: {
+              prolific_pid: q.get('PROLIFIC_PID') || '',
+              study_id: q.get('STUDY_ID') || '',
+              session_id: q.get('SESSION_ID') || ''
+            }
+          }
+        },
+        assistant: {
+          persistence: 'localStorage',
+          // Inline code (the backtick phrases of the definitions) as a light highlight instead of a code box;
+          // hide the header restart control and the end-of-chat "Start new chat" button.
+          stylesheet: 'data:text/css;base64,' + btoa(
+            '.vfrc-message .markdown code { font-family: inherit; font-size: inherit; background: #fff3bf; color: #1d1d1f; padding: 0 3px; border-radius: 3px; border: 0; }' +
+            '.vfrc-message .markdown ol, .vfrc-message .markdown ul { margin: 4px 0; padding-left: 22px; }' +
+            '.vfrc-header--actions, .vfrc-header .vfrc-button, #restart-chat, .vfrc-prompt { display: none !important; }' +
+            '.vfrc-footer__start-button, #vfrc-start-chat { display: none !important; }')
+        },
+        render: { mode: 'embedded', target: d.getElementById('vf') },
+        autostart: true
+      });
+    };
+    v.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
+    v.type = 'text/javascript';
+    s.parentNode.insertBefore(v, s);
+  })(document, 'script');
+})();
+</script>
+
+</body>
+</html>
