@@ -91,13 +91,12 @@
         },
         assistant: {
           persistence: 'localStorage',
+          // Chat text in Open Sans (loaded by the widget from Google Fonts), the same font as the text inside the story pictures (V5 r7).
+          fontFamily: 'Open Sans',
           // Inline code (the backtick phrases of the definitions) as a light highlight instead of a code box;
           // hide the header restart control and the end-of-chat "Start new chat" button.
           stylesheet: 'data:text/css;base64,' + btoa(
             '.vfrc-message .markdown code { font-family: inherit; font-size: inherit; background: #fff3bf; color: #1d1d1f; padding: 0 1px; border-radius: 3px; border: 0; }' +
-            // The row of a card that repeats the last car is marked in italics by the survey; show it grey, upright.
-            '.vfrc-message .markdown td em { font-style: normal; color: #8a93a0; }' +
-            '.vfrc-message .markdown td em code { background: #f3efd9; color: #8a93a0; }' +
             '.vfrc-message .markdown ol, .vfrc-message .markdown ul { margin: 4px 0; padding-left: 22px; }' +
             '.vfrc-header--actions, .vfrc-header .vfrc-button, #restart-chat, .vfrc-prompt { display: none !important; }' +
             '.vfrc-footer__start-button, #vfrc-start-chat { display: none !important; }')
