@@ -122,7 +122,7 @@
               var mk = function (tag, cls, text) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (text !== undefined) { e.textContent = text; } return e; };
 
               var box = mk('div', 'agvo-form');
-              box.style.setProperty('--agvo-cols', 'minmax(0, 2.4fr) repeat(' + labels.length + ', minmax(0, 1fr))');
+              box.style.setProperty('--agvo-cols', 'minmax(0, 2fr) repeat(' + labels.length + ', minmax(0, 1fr))');
               var css = mk('style');
               css.textContent =
                 '.agvo-form { container-type: inline-size; box-sizing: border-box; width: 100%; font-size: 14px; line-height: 1.4; color: #1d1d1f; background: #fff; border: 1px solid #d2d2d7; border-radius: 12px; padding: 12px; }' +
@@ -146,10 +146,13 @@
                 '.agvo-locked .agvo-o:not(.agvo-on) { color: #a1a1a6; border-color: #e3e3e8; }' +
                 '.agvo-locked .agvo-submit, .agvo-locked .agvo-warn { display: none; }' +
                 // wide enough for a grid: one line per row, the scale as column headings, round marks to tap
+                // phone width: one step larger, like the chat messages around the form
+                '@media (max-width: 600px) { .agvo-form { font-size: 16px; } .agvo-o { font-size: 15px; } .agvo-prog, .agvo-warn { font-size: 14px; } .agvo-submit { font-size: 16px; } }' +
                 '@container (min-width: 560px) {' +
-                '  .agvo-head { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 4px; align-items: end; padding: 6px 0 8px; font-size: 12px; line-height: 1.2; color: #515154; text-align: center; }' +
-                '  .agvo-row { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 4px; align-items: center; padding: 6px 0; }' +
-                '  .agvo-rt { margin: 0; padding-right: 8px; }' +
+                '  .agvo-head { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 16px; align-items: end; padding: 8px 0 10px; font-size: 12.5px; line-height: 1.25; color: #515154; text-align: center; }' +
+                '  .agvo-head span { overflow-wrap: break-word; }' +
+                '  .agvo-row { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 16px; align-items: center; padding: 6px 0; }' +
+                '  .agvo-rt { margin: 0; }' +
                 '  .agvo-opts { display: contents; }' +
                 '  .agvo-o { width: 100%; min-height: 36px; padding: 0; border: 0; border-radius: 8px; background: none; font-size: 0; }' +
                 '  .agvo-o::before { content: ""; display: inline-block; width: 18px; height: 18px; border: 2px solid #8e8e93; border-radius: 50%; vertical-align: middle; }' +
@@ -250,16 +253,19 @@
             }
           }],
           persistence: 'localStorage',
-          // Chat text in Open Sans (loaded by the widget from Google Fonts).
-          fontFamily: 'Open Sans',
+          // Chat text in the device's own sans-serif. The widget only writes this value into its CSS and loads
+          // no font file, so a single web-font name with no fallback shows as the browser default (serif on iOS).
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
           // Tighter lists; hide the header restart control and the end-of-chat "Start new chat" button.
           stylesheet: 'data:text/css;base64,' + btoa(
             '.vfrc-message--extension-agvo_form { display: block; width: 100%; max-width: 100%; padding: 0; background: none; }' +
             '.vfrc-message--extension-agvo_form > span { display: block; width: 100%; }' +
-            '.vfrc-message--extension-agvo_form, .vfrc-message--extension-agvo_form button { font-family: "Open Sans", sans-serif; }' +
+            '.vfrc-message--extension-agvo_form, .vfrc-message--extension-agvo_form button { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }' +
             '.vfrc-message .markdown ol, .vfrc-message .markdown ul { margin: 4px 0; padding-left: 22px; }' +
             // Inline code (the backtick words that tell the cars apart) shows as a light highlight, not a code box.
             '.vfrc-message .markdown code { font-family: inherit; font-size: inherit; background: #fff3bf; color: #1d1d1f; padding: 0 1px; border-radius: 3px; border: 0; }' +
+            // Phone width: messages and buttons one step larger (16px instead of the widget's 14px).
+            '@media (max-width: 600px) { .vfrc-message, .vfrc-message .markdown, .vfrc-button { font-size: 16px; line-height: 1.45; } }' +
             '.vfrc-header--actions, .vfrc-header .vfrc-button, #restart-chat, .vfrc-prompt { display: none !important; }' +
             '.vfrc-footer__start-button, #vfrc-start-chat { display: none !important; }')
         },

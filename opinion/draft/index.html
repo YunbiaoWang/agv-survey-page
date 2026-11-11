@@ -99,13 +99,16 @@
         },
         assistant: {
           persistence: 'localStorage',
-          // Chat text in Open Sans (loaded by the widget from Google Fonts).
-          fontFamily: 'Open Sans',
+          // Chat text in the device's own sans-serif. The widget only writes this value into its CSS and loads
+          // no font file, so a single web-font name with no fallback shows as the browser default (serif on iOS).
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
           // Tighter lists; hide the header restart control and the end-of-chat "Start new chat" button.
           stylesheet: 'data:text/css;base64,' + btoa(
             '.vfrc-message .markdown ol, .vfrc-message .markdown ul { margin: 4px 0; padding-left: 22px; }' +
             // Inline code (the backtick words that tell the cars apart) shows as a light highlight, not a code box.
             '.vfrc-message .markdown code { font-family: inherit; font-size: inherit; background: #fff3bf; color: #1d1d1f; padding: 0 1px; border-radius: 3px; border: 0; }' +
+            // Phone width: messages and buttons one step larger (16px instead of the widget's 14px).
+            '@media (max-width: 600px) { .vfrc-message, .vfrc-message .markdown, .vfrc-button { font-size: 16px; line-height: 1.45; } }' +
             '.vfrc-header--actions, .vfrc-header .vfrc-button, #restart-chat, .vfrc-prompt { display: none !important; }' +
             '.vfrc-footer__start-button, #vfrc-start-chat { display: none !important; }')
         },
