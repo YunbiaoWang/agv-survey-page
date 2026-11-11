@@ -128,6 +128,8 @@
                 '.agvo-form { container-type: inline-size; box-sizing: border-box; width: 100%; font-size: 14px; line-height: 1.4; color: #1d1d1f; background: #fff; border: 1px solid #d2d2d7; border-radius: 12px; padding: 12px; }' +
                 '.agvo-form * { box-sizing: border-box; font-family: inherit; }' +
                 '.agvo-title { font-weight: 600; margin: 0 0 4px; }' +
+                '.agvo-title strong { font-weight: 800; }' +
+                '.agvo-hl { background: #fff3bf; padding: 0 1px; border-radius: 3px; }' +
                 '.agvo-head { display: none; }' +
                 '.agvo-row { padding: 10px 0 8px; border-top: 1px solid #ececf0; }' +
                 '.agvo-rt { margin: 0 0 6px; }' +
@@ -162,7 +164,18 @@
                 '  .agvo-locked .agvo-o:not(.agvo-on)::before { border-color: #d2d2d7; }' +
                 '}';
               box.appendChild(css);
-              box.appendChild(mk('div', 'agvo-title', p.title || ''));
+              // the heading and the rows may carry the survey's two marks: **bold** and a backtick word (highlight)
+              var rich = function (el, text) {
+                String(text || '').split('**').forEach(function (part, n) {
+                  var host = n % 2 ? el.appendChild(document.createElement('strong')) : el;
+                  part.split('`').forEach(function (bit, m) {
+                    if (!bit) { return; }
+                    if (m % 2) { host.appendChild(mk('span', 'agvo-hl', bit)); } else { host.appendChild(document.createTextNode(bit)); }
+                  });
+                });
+                return el;
+              };
+              box.appendChild(rich(mk('div', 'agvo-title'), p.title));
               var head = mk('div', 'agvo-head');
               head.appendChild(mk('span', '', ''));
               labels.forEach(function (l) { head.appendChild(mk('span', '', l)); });
@@ -187,7 +200,7 @@
                 var row = mk('div', 'agvo-row');
                 var rt = mk('div', 'agvo-rt');
                 rt.appendChild(mk('span', 'agvo-n', (n + 1) + '.'));
-                rt.appendChild(document.createTextNode(r.text));
+                rich(rt, r.text);
                 row.appendChild(rt);
                 var opts = mk('div', 'agvo-opts');
                 labels.forEach(function (l, m) {
