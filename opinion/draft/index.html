@@ -104,6 +104,8 @@
           // Tighter lists; hide the header restart control and the end-of-chat "Start new chat" button.
           stylesheet: 'data:text/css;base64,' + btoa(
             '.vfrc-message .markdown ol, .vfrc-message .markdown ul { margin: 4px 0; padding-left: 22px; }' +
+            // Inline code (the backtick words that tell the cars apart) shows as a light highlight, not a code box.
+            '.vfrc-message .markdown code { font-family: inherit; font-size: inherit; background: #fff3bf; color: #1d1d1f; padding: 0 1px; border-radius: 3px; border: 0; }' +
             '.vfrc-header--actions, .vfrc-header .vfrc-button, #restart-chat, .vfrc-prompt { display: none !important; }' +
             '.vfrc-footer__start-button, #vfrc-start-chat { display: none !important; }')
         },
