@@ -160,9 +160,9 @@
                 '.agvo-items .agvo-rt { margin-bottom: 8px; }' +
                 '.agvo-row.agvo-fu { border-top: 0; margin: -2px 0 8px 6px; padding: 2px 0 2px 12px; border-left: 3px solid #d2d2d7; font-size: 0.94em; }' +
                 '.agvo-row.agvo-fu .agvo-n { display: none; }' +
-                // follow-ups that belong to several questions (g): level with the numbered questions, no bar, one line above the group
-                '.agvo-row.agvo-fu.agvo-grp { border-left: 0; border-top: 0; margin: 0; padding: 10px 0 8px; font-size: inherit; }' +
-                '.agvo-row.agvo-fu.agvo-grp.agvo-g1 { border-top: 1px solid #ececf0; }' +
+                // follow-ups that belong to several questions (g): set out like the numbered questions, with one line above the group
+                '.agvo-row.agvo-grp { border-top: 0; }' +
+                '.agvo-row.agvo-grp.agvo-g1 { border-top: 1px solid #ececf0; }' +
                 // wide enough for a grid: one line per row, the scale as column headings, round marks to tap
                 // phone width: one step larger, like the chat messages around the form
                 '@media (max-width: 600px) { .agvo-form { font-size: 16px; } .agvo-o { font-size: 15px; } .agvo-prog, .agvo-warn { font-size: 14px; } .agvo-submit { font-size: 16px; } }' +
@@ -216,7 +216,8 @@
                 rows.forEach(function (r) {
                   var at = vis.indexOf(r);
                   if (r.g) { rowEls[r.id].classList.add('agvo-grp'); rowEls[r.id].classList.toggle('agvo-g1', at >= 0 && (at === 0 || vis[at - 1].g !== r.g)); }
-                  if (mainOnly) { if (r.w) { rowEls[r.id].classList.add('agvo-fu'); } else if (at >= 0) { seen += 1; } nums[r.id] = seen; }
+                  // a follow-up takes no number, unless it is marked nb: then it is numbered while on show and the questions after it follow on
+                  if (mainOnly) { if (r.w && !r.nb) { rowEls[r.id].classList.add('agvo-fu'); } else if (at >= 0) { seen += 1; } nums[r.id] = seen; }
                   if (at < 0 && st.a[r.id]) { delete st.a[r.id]; dropped = true; }      // a hidden follow-up keeps no answer
                   rowEls[r.id].classList.toggle('agvo-off', at < 0);
                   if (at < 0) { rowEls[r.id].classList.remove('agvo-miss'); }
@@ -277,7 +278,7 @@
                 vis.forEach(function (r, n) {
                   var miss = !st.a[r.id];
                   rowEls[r.id].classList.toggle('agvo-miss', miss);
-                  if (miss) { missing.push(!mainOnly ? n + 1 : (r.w ? (r.g ? 'the question after ' : 'the follow-up under ') + nums[r.id] : nums[r.id])); }
+                  if (miss) { missing.push(!mainOnly ? n + 1 : (r.w && !r.nb ? 'the follow-up under ' + nums[r.id] : nums[r.id])); }
                 });
                 if (missing.length) {
                   warn.textContent = (items ? 'Please answer every question. Still to answer: ' : 'Please answer every row. Still to answer: ') + missing.join(', ') + '.';
