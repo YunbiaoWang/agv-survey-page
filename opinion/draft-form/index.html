@@ -105,6 +105,8 @@
           // A car's form has mode 'items': every row is a question with its own options (o, c), always laid out
           // with the options under the question. A row with w is a follow-up: it shows only while one of the rows
           // named in w has one of the listed answers, and its own answer is dropped when it hides.
+          // A row with ot { c, p } takes an optional line of text under its option c: the line shows while c is the
+          // answer, is cleared when another option is tapped or the row hides, and goes out with Submit as x.
           extensions: [{
             name: 'agvo_form', type: 'response',
             match: function (o) { return o.trace && o.trace.type === 'agvo_form'; },
@@ -115,10 +117,10 @@
               var LAB = function (r) { return r.o || labels; }, COD = function (r) { return r.c || codes; };
               var plain = function (s) { return String(s || '').split('**').join('').split('`').join(''); };
               var KEY = 'agvo_form_' + (window.__SESSION_ID__ || '') + '_' + p.id;
-              var st = { a: {}, done: [] };
+              var st = { a: {}, done: [], x: {} };
               try {
                 var kept = JSON.parse(window.localStorage.getItem(KEY) || 'null');
-                if (kept && kept.a && kept.done) { st = kept; }
+                if (kept && kept.a && kept.done) { st = kept; if (!st.x) { st.x = {}; } }
               } catch (e) {}
               var save = function () { try { window.localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
               // keep only answers that fit the rows and codes of this showing
@@ -163,6 +165,12 @@
                 // follow-ups that belong to several questions (g): set out like the numbered questions, with one line above the group
                 '.agvo-row.agvo-grp { border-top: 0; }' +
                 '.agvo-row.agvo-grp.agvo-g1 { border-top: 1px solid #ececf0; }' +
+                // the optional line of text under an "other" option: as wide as the option, 16px so a phone does not zoom in
+                '.agvo-ot { grid-column: 1 / -1; display: block; width: 100%; min-width: 0; margin: 0; padding: 7px 12px; min-height: 38px; border: 1px solid #b9b9c0; border-radius: 10px; background: #fff; color: #1d1d1f; font-size: 16px; line-height: 1.3; }' +
+                '.agvo-ot:focus { outline: 2px solid #2e6fd9; outline-offset: 1px; }' +
+                '.agvo-ot::placeholder { color: #8e8e93; }' +
+                '.agvo-ot.agvo-off { display: none; }' +
+                '.agvo-locked .agvo-ot { color: #515154; background: #f5f5f7; border-color: #e3e3e8; }' +
                 // wide enough for a grid: one line per row, the scale as column headings, round marks to tap
                 // phone width: one step larger, like the chat messages around the form
                 '@media (max-width: 600px) { .agvo-form { font-size: 16px; } .agvo-o { font-size: 15px; } .agvo-prog, .agvo-warn { font-size: 14px; } .agvo-submit { font-size: 16px; } }' +
@@ -197,7 +205,7 @@
               labels.forEach(function (l) { head.appendChild(mk('span', '', l)); });
               box.appendChild(head);
 
-              var rowEls = {}, locked = false, nums = {};
+              var rowEls = {}, otEls = {}, locked = false, nums = {};
               var prog = mk('span', 'agvo-prog'), warn = mk('div', 'agvo-warn'), send = mk('button', 'agvo-submit', 'Submit');
               send.type = 'button';
               // the rows on show, in order: a follow-up shows while a row it depends on is on show with one of the listed answers
@@ -232,6 +240,13 @@
                     b.setAttribute('aria-pressed', on ? 'true' : 'false');
                   });
                 });
+                // the optional line: on show only while its option is the answer of a row on show; otherwise empty
+                rows.forEach(function (r) {
+                  if (!r.ot) { return; }
+                  var a = st.a[r.id], on = !!a && a.c === r.ot.c;
+                  if (!on && (st.x[r.id] !== undefined || otEls[r.id].value)) { delete st.x[r.id]; otEls[r.id].value = ''; save(); }
+                  otEls[r.id].classList.toggle('agvo-off', !on);
+                });
                 prog.textContent = count() + ' of ' + vis.length + ' answered';
               };
               rows.forEach(function (r, n) {
@@ -256,6 +271,27 @@
                     paint();
                   };
                   opts.appendChild(b);
+                  if (r.ot && r.ot.c === rc[m]) {
+                    var inp = mk('input', 'agvo-ot agvo-off');
+                    inp.type = 'text';
+                    inp.maxLength = 200;
+                    inp.placeholder = r.ot.p;
+                    inp.setAttribute('aria-label', l + ': ' + r.ot.p);
+                    inp.setAttribute('autocomplete', 'off');
+                    inp.setAttribute('enterkeyhint', 'done');
+                    inp.value = typeof st.x[r.id] === 'string' ? st.x[r.id].slice(0, 200) : '';
+                    inp.oninput = function () { if (locked) { return; } st.x[r.id] = inp.value; save(); };
+                    // Enter stays in the line: it neither submits the form nor reaches the chat's own input box
+                    var keys = function (e) {
+                      e.stopPropagation();
+                      if (e.key === 'Enter' || e.keyCode === 13) { if (!e.isComposing) { e.preventDefault(); } }
+                    };
+                    inp.addEventListener('keydown', keys);
+                    inp.addEventListener('keypress', keys);
+                    inp.addEventListener('keyup', function (e) { e.stopPropagation(); });
+                    otEls[r.id] = inp;
+                    opts.appendChild(inp);
+                  }
                 });
                 row.appendChild(opts);
                 rowEls[r.id] = row;
@@ -270,7 +306,7 @@
               var lock = function () {
                 locked = true;
                 box.classList.add('agvo-locked');
-                Array.prototype.forEach.call(box.querySelectorAll('button'), function (b) { b.disabled = true; });
+                Array.prototype.forEach.call(box.querySelectorAll('button, input'), function (b) { b.disabled = true; });
               };
               send.onclick = function () {
                 if (locked) { return; }
@@ -286,7 +322,15 @@
                   return;
                 }
                 var answers = {};
-                vis.forEach(function (r) { answers[r.id] = st.a[r.id]; });
+                vis.forEach(function (r) {
+                  answers[r.id] = { c: st.a[r.id].c, t: st.a[r.id].t };
+                  if (r.ot && st.a[r.id].c === r.ot.c) {      // the optional text, trimmed; an empty string when nothing was typed
+                    var tx = String(otEls[r.id].value || '').trim().slice(0, 200);
+                    answers[r.id].x = tx;
+                    otEls[r.id].value = tx;
+                    st.x[r.id] = tx;
+                  }
+                });
                 st.done.push(String(p.k));
                 save();
                 lock();
