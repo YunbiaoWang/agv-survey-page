@@ -102,11 +102,17 @@
           // the custom trace agvo_form { id, k, title, labels, codes, rows: [{ id, text }] } and waits; Submit sends
           // back one event with the code and the tap time of every row. What has been tapped is kept in this
           // browser, so the form comes back filled in after a typed question, a reload or a reopened link.
+          // A car's form has mode 'items': every row is a question with its own options (o, c), always laid out
+          // with the options under the question. A row with w is a follow-up: it shows only while one of the rows
+          // named in w has one of the listed answers, and its own answer is dropped when it hides.
           extensions: [{
             name: 'agvo_form', type: 'response',
             match: function (o) { return o.trace && o.trace.type === 'agvo_form'; },
             render: function (o) {
               var p = o.trace.payload || {}, rows = p.rows || [], labels = p.labels || [], codes = p.codes || [];
+              var items = p.mode === 'items';
+              var LAB = function (r) { return r.o || labels; }, COD = function (r) { return r.c || codes; };
+              var plain = function (s) { return String(s || '').split('**').join('').split('`').join(''); };
               var KEY = 'agvo_form_' + (window.__SESSION_ID__ || '') + '_' + p.id;
               var st = { a: {}, done: [] };
               try {
@@ -116,12 +122,12 @@
               var save = function () { try { window.localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
               // keep only answers that fit the rows and codes of this showing
               var fits = {};
-              rows.forEach(function (r) { if (st.a[r.id] && codes.indexOf(st.a[r.id].c) >= 0) { fits[r.id] = st.a[r.id]; } });
+              rows.forEach(function (r) { if (st.a[r.id] && COD(r).indexOf(st.a[r.id].c) >= 0) { fits[r.id] = st.a[r.id]; } });
               st.a = fits;
               var t0 = Date.now();
               var mk = function (tag, cls, text) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (text !== undefined) { e.textContent = text; } return e; };
 
-              var box = mk('div', 'agvo-form');
+              var box = mk('div', items ? 'agvo-form agvo-items' : 'agvo-form');
               box.style.setProperty('--agvo-cols', 'minmax(0, 2fr) repeat(' + labels.length + ', minmax(0, 1fr))');
               var css = mk('style');
               css.textContent =
@@ -147,21 +153,25 @@
                 '.agvo-locked .agvo-o { cursor: default; }' +
                 '.agvo-locked .agvo-o:not(.agvo-on) { color: #a1a1a6; border-color: #e3e3e8; }' +
                 '.agvo-locked .agvo-submit, .agvo-locked .agvo-warn { display: none; }' +
+                // a car's form: a question hidden until its condition holds; long options one to a line
+                '.agvo-row.agvo-off { display: none; }' +
+                '.agvo-opts.agvo-one { grid-template-columns: 1fr; }' +
+                '.agvo-items .agvo-rt { margin-bottom: 8px; }' +
                 // wide enough for a grid: one line per row, the scale as column headings, round marks to tap
                 // phone width: one step larger, like the chat messages around the form
                 '@media (max-width: 600px) { .agvo-form { font-size: 16px; } .agvo-o { font-size: 15px; } .agvo-prog, .agvo-warn { font-size: 14px; } .agvo-submit { font-size: 16px; } }' +
                 '@container (min-width: 560px) {' +
-                '  .agvo-head { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 16px; align-items: end; padding: 8px 0 10px; font-size: 12.5px; line-height: 1.25; color: #515154; text-align: center; }' +
-                '  .agvo-head span { overflow-wrap: break-word; }' +
-                '  .agvo-row { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 16px; align-items: center; padding: 6px 0; }' +
-                '  .agvo-rt { margin: 0; }' +
-                '  .agvo-opts { display: contents; }' +
-                '  .agvo-o { width: 100%; min-height: 36px; padding: 0; border: 0; border-radius: 8px; background: none; font-size: 0; }' +
-                '  .agvo-o::before { content: ""; display: inline-block; width: 18px; height: 18px; border: 2px solid #8e8e93; border-radius: 50%; vertical-align: middle; }' +
-                '  .agvo-o:hover { background: #f2f2f7; }' +
-                '  .agvo-o.agvo-on { background: none; }' +
-                '  .agvo-o.agvo-on::before { border-color: #2e6fd9; background: #2e6fd9; box-shadow: inset 0 0 0 3px #fff; }' +
-                '  .agvo-locked .agvo-o:not(.agvo-on)::before { border-color: #d2d2d7; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-head { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 16px; align-items: end; padding: 8px 0 10px; font-size: 12.5px; line-height: 1.25; color: #515154; text-align: center; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-head span { overflow-wrap: break-word; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-row { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 16px; align-items: center; padding: 6px 0; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-rt { margin: 0; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-opts { display: contents; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o { width: 100%; min-height: 36px; padding: 0; border: 0; border-radius: 8px; background: none; font-size: 0; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o::before { content: ""; display: inline-block; width: 18px; height: 18px; border: 2px solid #8e8e93; border-radius: 50%; vertical-align: middle; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o:hover { background: #f2f2f7; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o.agvo-on { background: none; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o.agvo-on::before { border-color: #2e6fd9; background: #2e6fd9; box-shadow: inset 0 0 0 3px #fff; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-locked .agvo-o:not(.agvo-on)::before { border-color: #d2d2d7; }' +
                 '}';
               box.appendChild(css);
               // the heading and the rows may carry the survey's two marks: **bold** and a backtick word (highlight)
@@ -184,8 +194,27 @@
               var rowEls = {}, locked = false;
               var prog = mk('span', 'agvo-prog'), warn = mk('div', 'agvo-warn'), send = mk('button', 'agvo-submit', 'Submit');
               send.type = 'button';
-              var count = function () { return rows.filter(function (r) { return !!st.a[r.id]; }).length; };
+              // the rows on show, in order: a follow-up shows while a row it depends on is on show with one of the listed answers
+              var shown = function () {
+                var on = {}, out = [];
+                rows.forEach(function (r) {
+                  var yes = !r.w;
+                  (r.w || []).forEach(function (d) { var a = st.a[d[0]]; if (on[d[0]] && a && d[1].indexOf(a.c) >= 0) { yes = true; } });
+                  if (yes) { on[r.id] = true; out.push(r); }
+                });
+                return out;
+              };
+              var count = function () { return shown().filter(function (r) { return !!st.a[r.id]; }).length; };
               var paint = function () {
+                var vis = shown(), dropped = false;
+                rows.forEach(function (r) {
+                  var at = vis.indexOf(r);
+                  if (at < 0 && st.a[r.id]) { delete st.a[r.id]; dropped = true; }      // a hidden follow-up keeps no answer
+                  rowEls[r.id].classList.toggle('agvo-off', at < 0);
+                  if (at < 0) { rowEls[r.id].classList.remove('agvo-miss'); }
+                  rowEls[r.id].querySelector('.agvo-n').textContent = (at + 1) + '.';
+                });
+                if (dropped) { save(); }
                 rows.forEach(function (r) {
                   var a = st.a[r.id];
                   Array.prototype.forEach.call(rowEls[r.id].querySelectorAll('.agvo-o'), function (b) {
@@ -194,7 +223,7 @@
                     b.setAttribute('aria-pressed', on ? 'true' : 'false');
                   });
                 });
-                prog.textContent = count() + ' of ' + rows.length + ' answered';
+                prog.textContent = count() + ' of ' + vis.length + ' answered';
               };
               rows.forEach(function (r, n) {
                 var row = mk('div', 'agvo-row');
@@ -202,15 +231,16 @@
                 rt.appendChild(mk('span', 'agvo-n', (n + 1) + '.'));
                 rich(rt, r.text);
                 row.appendChild(rt);
-                var opts = mk('div', 'agvo-opts');
-                labels.forEach(function (l, m) {
+                var rl = LAB(r), rc = COD(r);
+                var opts = mk('div', items && rl.some(function (l) { return l.length > 24; }) ? 'agvo-opts agvo-one' : 'agvo-opts');
+                rl.forEach(function (l, m) {
                   var b = mk('button', 'agvo-o', l);
                   b.type = 'button';
-                  b.setAttribute('data-c', codes[m]);
-                  b.setAttribute('aria-label', (n + 1) + '. ' + r.text + ': ' + l);
+                  b.setAttribute('data-c', rc[m]);
+                  b.setAttribute('aria-label', plain(r.text) + ': ' + l);
                   b.onclick = function () {
                     if (locked) { return; }
-                    st.a[r.id] = { c: codes[m], t: Date.now() };
+                    st.a[r.id] = { c: rc[m], t: Date.now() };
                     save();
                     row.classList.remove('agvo-miss');
                     if (!box.querySelector('.agvo-miss')) { warn.textContent = ''; }
@@ -235,23 +265,23 @@
               };
               send.onclick = function () {
                 if (locked) { return; }
-                var missing = [];
-                rows.forEach(function (r, n) {
+                var missing = [], vis = shown();
+                vis.forEach(function (r, n) {
                   var miss = !st.a[r.id];
                   rowEls[r.id].classList.toggle('agvo-miss', miss);
                   if (miss) { missing.push(n + 1); }
                 });
                 if (missing.length) {
-                  warn.textContent = 'Please answer every row. Still to answer: ' + missing.join(', ') + '.';
-                  try { rowEls[rows[missing[0] - 1].id].scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+                  warn.textContent = (items ? 'Please answer every question. Still to answer: ' : 'Please answer every row. Still to answer: ') + missing.join(', ') + '.';
+                  try { rowEls[vis[missing[0] - 1].id].scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
                   return;
                 }
                 var answers = {};
-                rows.forEach(function (r) { answers[r.id] = st.a[r.id]; });
+                vis.forEach(function (r) { answers[r.id] = st.a[r.id]; });
                 st.done.push(String(p.k));
                 save();
                 lock();
-                var label = rows.map(function (r, n) { return (n + 1) + '. ' + r.text + ': ' + labels[codes.indexOf(answers[r.id].c)]; }).join('; ');
+                var label = vis.map(function (r, n) { return (n + 1) + '. ' + plain(r.text) + ': ' + LAB(r)[COD(r).indexOf(answers[r.id].c)]; }).join('; ');
                 window.voiceflow.chat.interact({ type: 'event', payload: { event: { name: 'agvo_form_submit', form: p.id, k: p.k, answers: answers, shown: t0, sent: Date.now() }, label: label } });
               };
 
