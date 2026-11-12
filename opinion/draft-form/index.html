@@ -158,11 +158,6 @@
                 '.agvo-row.agvo-off { display: none; }' +
                 '.agvo-opts.agvo-one { grid-template-columns: 1fr; }' +
                 '.agvo-items .agvo-rt { margin-bottom: 8px; }' +
-                // a car's two badges: who drives, and whether it has an AI agent (dimmed when it has none)
-                '.agvo-badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }' +
-                '.agvo-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 9px; border-radius: 999px; border: 1px solid #b7cdf6; background: #e8f0fe; color: #1a4fb3; font-size: 0.94em; font-weight: 600; line-height: 1.2; }' +
-                '.agvo-badge svg { width: 1.35em; height: 1.35em; flex: none; }' +
-                '.agvo-badge.agvo-dim { border-color: #d2d2d7; background: #f2f2f5; color: #6e6e73; }' +
                 '.agvo-row.agvo-fu { border-top: 0; margin: -2px 0 8px 6px; padding: 2px 0 2px 12px; border-left: 3px solid #d2d2d7; font-size: 0.94em; }' +
                 '.agvo-row.agvo-fu .agvo-n { display: none; }' +
                 // wide enough for a grid: one line per row, the scale as column headings, round marks to tap
@@ -194,32 +189,6 @@
                 return el;
               };
               box.appendChild(rich(mk('div', 'agvo-title'), p.title));
-              if (p.badges && p.badges.length) {
-                // line icons, drawn here so the page loads no picture: a steering wheel, a car, a four-point star
-                var ICON = {
-                  wheel: ['c12,12,9', 'c12,12,2.2', 'M12 14.2V21', 'M9.9 11.3L3.6 9.2', 'M14.1 11.3L20.4 9.2'],
-                  car: ['M3 16v-3.2l2.2-.8 2-4.2c.3-.6.9-1 1.6-1h6.4c.7 0 1.3.4 1.6 1l2 4.2 2.2.8V16', 'M3 16h18', 'M6.4 12h11.2', 'c7.5,16.5,1.8', 'c16.5,16.5,1.8'],
-                  agent: ['M12 3l1.9 5.6c.3.8.9 1.4 1.7 1.7L21 12l-5.4 1.7c-.8.3-1.4.9-1.7 1.7L12 21l-1.9-5.6c-.3-.8-.9-1.4-1.7-1.7L3 12l5.4-1.7c.8-.3 1.4-.9 1.7-1.7z']
-                };
-                var NS = 'http://www.w3.org/2000/svg';
-                var bar = mk('div', 'agvo-badges');
-                p.badges.forEach(function (b) {
-                  var el = mk('span', b.on ? 'agvo-badge' : 'agvo-badge agvo-dim');
-                  var svg = document.createElementNS(NS, 'svg');
-                  svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor');
-                  svg.setAttribute('stroke-width', '1.8'); svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round'); svg.setAttribute('aria-hidden', 'true');
-                  (ICON[b.i] || []).forEach(function (d) {
-                    var s;
-                    if (d.charAt(0) === 'c') { var v = d.slice(1).split(','); s = document.createElementNS(NS, 'circle'); s.setAttribute('cx', v[0]); s.setAttribute('cy', v[1]); s.setAttribute('r', v[2]); }
-                    else { s = document.createElementNS(NS, 'path'); s.setAttribute('d', d); }
-                    svg.appendChild(s);
-                  });
-                  el.appendChild(svg);
-                  el.appendChild(mk('span', '', b.t));
-                  bar.appendChild(el);
-                });
-                box.appendChild(bar);
-              }
               var head = mk('div', 'agvo-head');
               head.appendChild(mk('span', '', ''));
               labels.forEach(function (l) { head.appendChild(mk('span', '', l)); });
@@ -341,6 +310,7 @@
             '.vfrc-message--extension-agvo_form, .vfrc-message--extension-agvo_form button { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }' +
             '.vfrc-message .markdown ol, .vfrc-message .markdown ul { margin: 4px 0; padding-left: 22px; }' +
             // Inline code (the backtick words that tell the cars apart) shows as a light highlight, not a code box.
+            '.vfrc-message .markdown img { display: block; width: 100%; max-width: 100%; height: auto; margin: 6px 0; border-radius: 12px; }' +
             '.vfrc-message .markdown code { font-family: inherit; font-size: inherit; background: #fff3bf; color: #1d1d1f; padding: 0 1px; border-radius: 3px; border: 0; }' +
             // Phone width: messages and buttons one step larger (16px instead of the widget's 14px).
             '@media (max-width: 600px) { .vfrc-message, .vfrc-message .markdown, .vfrc-button { font-size: 16px; line-height: 1.45; } }' +
