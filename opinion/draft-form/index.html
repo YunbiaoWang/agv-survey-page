@@ -111,6 +111,7 @@
             render: function (o) {
               var p = o.trace.payload || {}, rows = p.rows || [], labels = p.labels || [], codes = p.codes || [];
               var items = p.mode === 'items';
+              var mainOnly = p.num === 'main';      // follow-ups take no number: the other questions keep theirs
               var LAB = function (r) { return r.o || labels; }, COD = function (r) { return r.c || codes; };
               var plain = function (s) { return String(s || '').split('**').join('').split('`').join(''); };
               var KEY = 'agvo_form_' + (window.__SESSION_ID__ || '') + '_' + p.id;
@@ -157,6 +158,8 @@
                 '.agvo-row.agvo-off { display: none; }' +
                 '.agvo-opts.agvo-one { grid-template-columns: 1fr; }' +
                 '.agvo-items .agvo-rt { margin-bottom: 8px; }' +
+                '.agvo-row.agvo-fu { border-top: 0; margin: -2px 0 8px 6px; padding: 2px 0 2px 12px; border-left: 3px solid #d2d2d7; font-size: 0.94em; }' +
+                '.agvo-row.agvo-fu .agvo-n { display: none; }' +
                 // wide enough for a grid: one line per row, the scale as column headings, round marks to tap
                 // phone width: one step larger, like the chat messages around the form
                 '@media (max-width: 600px) { .agvo-form { font-size: 16px; } .agvo-o { font-size: 15px; } .agvo-prog, .agvo-warn { font-size: 14px; } .agvo-submit { font-size: 16px; } }' +
@@ -191,7 +194,7 @@
               labels.forEach(function (l) { head.appendChild(mk('span', '', l)); });
               box.appendChild(head);
 
-              var rowEls = {}, locked = false;
+              var rowEls = {}, locked = false, nums = {};
               var prog = mk('span', 'agvo-prog'), warn = mk('div', 'agvo-warn'), send = mk('button', 'agvo-submit', 'Submit');
               send.type = 'button';
               // the rows on show, in order: a follow-up shows while a row it depends on is on show with one of the listed answers
@@ -206,13 +209,14 @@
               };
               var count = function () { return shown().filter(function (r) { return !!st.a[r.id]; }).length; };
               var paint = function () {
-                var vis = shown(), dropped = false;
+                var vis = shown(), dropped = false, seen = 0;
                 rows.forEach(function (r) {
                   var at = vis.indexOf(r);
+                  if (mainOnly) { if (r.w) { rowEls[r.id].classList.add('agvo-fu'); } else if (at >= 0) { seen += 1; } nums[r.id] = seen; }
                   if (at < 0 && st.a[r.id]) { delete st.a[r.id]; dropped = true; }      // a hidden follow-up keeps no answer
                   rowEls[r.id].classList.toggle('agvo-off', at < 0);
                   if (at < 0) { rowEls[r.id].classList.remove('agvo-miss'); }
-                  rowEls[r.id].querySelector('.agvo-n').textContent = (at + 1) + '.';
+                  rowEls[r.id].querySelector('.agvo-n').textContent = (mainOnly ? nums[r.id] : at + 1) + '.';
                 });
                 if (dropped) { save(); }
                 rows.forEach(function (r) {
@@ -269,11 +273,11 @@
                 vis.forEach(function (r, n) {
                   var miss = !st.a[r.id];
                   rowEls[r.id].classList.toggle('agvo-miss', miss);
-                  if (miss) { missing.push(n + 1); }
+                  if (miss) { missing.push(!mainOnly ? n + 1 : (r.w ? 'the follow-up under ' + nums[r.id] : nums[r.id])); }
                 });
                 if (missing.length) {
                   warn.textContent = (items ? 'Please answer every question. Still to answer: ' : 'Please answer every row. Still to answer: ') + missing.join(', ') + '.';
-                  try { rowEls[vis[missing[0] - 1].id].scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+                  try { rowEls[vis.filter(function (r) { return !st.a[r.id]; })[0].id].scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
                   return;
                 }
                 var answers = {};
