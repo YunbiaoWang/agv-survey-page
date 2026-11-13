@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Survey on Cars with an AI Agent - HMTS Lab, McGill University</title>
+<style>
+  :root { color-scheme: light; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1d1d1f; background: #f5f5f7;
+    display: flex; flex-direction: column;
+  }
+  .top {
+    flex: 0 0 auto; width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box;
+    padding: 6px 16px; display: flex; justify-content: space-between; gap: 12px;
+    font-size: .8rem; color: #6e6e73;
+  }
+  #vf {
+    flex: 1 1 auto; min-height: 0; width: 100%; max-width: 720px; margin: 0 auto;
+    background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06);
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <span>Human-Machine Transportation Systems Lab, McGill University</span>
+  <span id="who"></span>
+</div>
+<div id="vf"></div>
+
+<script type="text/javascript">
+// The participant's Prolific ID (appended to the link by Prolific) is the session's user ID, so the
+// answers can be read back under it and a reopened link resumes the same session. A link opened
+// without one gets an id kept in this browser, for testers.
+(function () {
+  var q = new URLSearchParams(window.location.search);
+  // The Voiceflow environment the chat runs on. A device whose stored chat came from another
+  // environment starts over once, as with ?new=1.
+  var ENV = 'agv-opinion-form';
+  var envKept = '';
+  try { envKept = window.localStorage.getItem('agvt_env') || ''; } catch (e) {}
+  // ?new=1 starts this device over for a tester: it forgets the stored chat and the stored test ID,
+  // then drops the flag from the address so that a reload resumes the new session.
+  if (q.get('new') === '1' || envKept !== ENV) {
+    try {
+      Object.keys(window.localStorage).forEach(function (k) {
+        if (k.indexOf('voiceflow-session') === 0 || k === 'agvo_anon_id') { window.localStorage.removeItem(k); }
+      });
+      window.localStorage.setItem('agvt_env', ENV);
+    } catch (e) {}
+  }
+  if (q.get('new') === '1') {
+    q.delete('new');
+    var rest = q.toString();
+    try { window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash); } catch (e) {}
+  }
+  var pid = q.get('PROLIFIC_PID') || q.get('prolific_pid') || q.get('pid') || '';
+  pid = pid.trim().replace(/[^A-Za-z0-9_-]/g, '');
+  if (!pid) {
+    try { pid = window.localStorage.getItem('agvo_anon_id') || ''; } catch (e) {}
+    if (!pid) {
+      pid = 'anon-' + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+      try { window.localStorage.setItem('agvo_anon_id', pid); } catch (e) {}
+    }
+  }
+  window.__SESSION_ID__ = pid;
+  // Device class for the launch payload (stored with the transcript as DEV): phone, tablet or desktop.
+  var ua = navigator.userAgent || '';
+  var touch = (navigator.maxTouchPoints || 0) > 1;
+  var shortSide = Math.min(window.screen.width || 0, window.screen.height || 0);
+  var dev = 'desktop';
+  if (/iPad|Tablet/i.test(ua) || (touch && /Macintosh/.test(ua)) || (/Android/i.test(ua) && !/Mobi/i.test(ua))) { dev = 'tablet'; }
+  else if (/Mobi|iPhone|iPod|Android/i.test(ua) || (touch && shortSide > 0 && shortSide < 600)) { dev = 'phone'; }
+  document.getElementById('who').textContent = 'Session ' + pid;
+
+  (function (d, t) {
+    var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+    v.onload = function () {
+      window.voiceflow.chat.load({
+        verify: { projectID: '6aa7349f130c224030db4c18' },
+        url: 'https://general-runtime.voiceflow.com',
+        environmentID: ENV,
+        versionVariant: 'published',
+        userID: window.__SESSION_ID__,
+        launch: {
+          event: {
+            type: 'launch',
+            payload: {
+              prolific_pid: q.get('PROLIFIC_PID') || '',
+              study_id: q.get('STUDY_ID') || '',
+              session_id: q.get('SESSION_ID') || '',
+              device: dev
+            }
+          }
+        },
+        assistant: {
+          // Form trial: a rows group (one lead-in, several rows on one scale) drawn as ONE form. The workflow sends
+          // the custom trace agvo_form { id, k, title, labels, codes, rows: [{ id, text }] } and waits; Submit sends
+          // back one event with the code and the tap time of every row. What has been tapped is kept in this
+          // browser, so the form comes back filled in after a typed question, a reload or a reopened link.
+          // A car's form has mode 'items': every row is a question with its own options (o, c), always laid out
+          // with the options under the question. A row with w is a follow-up: it shows only while one of the rows
+          // named in w has one of the listed answers, and its own answer is dropped when it hides.
+          // A row with ot { c, p } takes an optional line of text under its option c: the line shows while c is the
+          // answer, is cleared when another option is tapped or the row hides, and goes out with Submit as x.
+          extensions: [{
+            name: 'agvo_form', type: 'response',
+            match: function (o) { return o.trace && o.trace.type === 'agvo_form'; },
+            render: function (o) {
+              var p = o.trace.payload || {}, rows = p.rows || [], labels = p.labels || [], codes = p.codes || [];
+              var items = p.mode === 'items';
+              var mainOnly = p.num === 'main';      // follow-ups take no number: the other questions keep theirs
+              var LAB = function (r) { return r.o || labels; }, COD = function (r) { return r.c || codes; };
+              var plain = function (s) { return String(s || '').split('**').join('').split('`').join(''); };
+              var KEY = 'agvo_form_' + (window.__SESSION_ID__ || '') + '_' + p.id;
+              var st = { a: {}, done: [], x: {} };
+              try {
+                var kept = JSON.parse(window.localStorage.getItem(KEY) || 'null');
+                if (kept && kept.a && kept.done) { st = kept; if (!st.x) { st.x = {}; } }
+              } catch (e) {}
+              var save = function () { try { window.localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+              // keep only answers that fit the rows and codes of this showing
+              var fits = {};
+              rows.forEach(function (r) { if (st.a[r.id] && COD(r).indexOf(st.a[r.id].c) >= 0) { fits[r.id] = st.a[r.id]; } });
+              st.a = fits;
+              var t0 = Date.now();
+              var mk = function (tag, cls, text) { var e = document.createElement(tag); if (cls) { e.className = cls; } if (text !== undefined) { e.textContent = text; } return e; };
+
+              var box = mk('div', items ? 'agvo-form agvo-items' : 'agvo-form');
+              box.style.setProperty('--agvo-cols', 'minmax(0, 2fr) repeat(' + labels.length + ', minmax(0, 1fr))');
+              var css = mk('style');
+              css.textContent =
+                '.agvo-form { container-type: inline-size; box-sizing: border-box; width: 100%; font-size: 14px; line-height: 1.4; color: #1d1d1f; background: #fff; border: 1px solid #d2d2d7; border-radius: 12px; padding: 12px; }' +
+                '.agvo-form * { box-sizing: border-box; font-family: inherit; }' +
+                '.agvo-title { font-weight: 600; margin: 0 0 4px; }' +
+                '.agvo-title strong { font-weight: 800; }' +
+                '.agvo-hl { background: #fff3bf; padding: 0 1px; border-radius: 3px; }' +
+                '.agvo-head { display: none; }' +
+                '.agvo-row { padding: 10px 0 8px; border-top: 1px solid #ececf0; }' +
+                '.agvo-rt { margin: 0 0 6px; }' +
+                '.agvo-n { color: #6e6e73; margin-right: 4px; }' +
+                // narrow: the options of a row in two equal columns under the row's text
+                '.agvo-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }' +
+                '.agvo-o { appearance: none; margin: 0; padding: 6px 8px; min-height: 36px; border: 1px solid #b9b9c0; border-radius: 18px; background: #fff; color: #1d1d1f; font-size: 13px; line-height: 1.2; text-align: center; cursor: pointer; }' +
+                '.agvo-o.agvo-on { background: #2e6fd9; border-color: #2e6fd9; color: #fff; }' +
+                '.agvo-miss .agvo-rt { color: #b3261e; font-weight: 600; }' +
+                '.agvo-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0 0; border-top: 1px solid #ececf0; }' +
+                '.agvo-prog { color: #6e6e73; font-size: 13px; }' +
+                '.agvo-submit { appearance: none; margin: 0; padding: 9px 20px; min-height: 40px; border: 0; border-radius: 10px; background: #1d1d1f; color: #fff; font-size: 14px; cursor: pointer; }' +
+                '.agvo-warn { color: #b3261e; font-size: 13px; padding: 8px 0; border-top: 1px solid #ececf0; }' +
+                '.agvo-warn:empty { display: none; }' +
+                '.agvo-locked .agvo-o { cursor: default; }' +
+                '.agvo-locked .agvo-o:not(.agvo-on) { color: #a1a1a6; border-color: #e3e3e8; }' +
+                '.agvo-locked .agvo-submit, .agvo-locked .agvo-warn { display: none; }' +
+                // a car's form: a question hidden until its condition holds; long options one to a line
+                '.agvo-row.agvo-off { display: none; }' +
+                '.agvo-opts.agvo-one { grid-template-columns: 1fr; }' +
+                '.agvo-items .agvo-rt { margin-bottom: 8px; }' +
+                '.agvo-row.agvo-fu { border-top: 0; margin: -2px 0 8px 6px; padding: 2px 0 2px 12px; border-left: 3px solid #d2d2d7; font-size: 0.94em; }' +
+                '.agvo-row.agvo-fu .agvo-n { display: none; }' +
+                // follow-ups that belong to several questions (g): set out like the numbered questions, with one line above the group
+                '.agvo-row.agvo-grp { border-top: 0; }' +
+                '.agvo-row.agvo-grp.agvo-g1 { border-top: 1px solid #ececf0; }' +
+                // the optional line of text under an "other" option: as wide as the option, 16px so a phone does not zoom in
+                '.agvo-ot { grid-column: 1 / -1; display: block; width: 100%; min-width: 0; margin: 0; padding: 7px 12px; min-height: 38px; border: 1px solid #b9b9c0; border-radius: 10px; background: #fff; color: #1d1d1f; font-size: 16px; line-height: 1.3; }' +
+                '.agvo-ot:focus { outline: 2px solid #2e6fd9; outline-offset: 1px; }' +
+                '.agvo-ot::placeholder { color: #8e8e93; }' +
+                '.agvo-ot.agvo-off { display: none; }' +
+                '.agvo-locked .agvo-ot { color: #515154; background: #f5f5f7; border-color: #e3e3e8; }' +
+                // wide enough for a grid: one line per row, the scale as column headings, round marks to tap
+                // phone width: one step larger, like the chat messages around the form
+                '@media (max-width: 600px) { .agvo-form { font-size: 16px; } .agvo-o { font-size: 15px; } .agvo-prog, .agvo-warn { font-size: 14px; } .agvo-submit { font-size: 16px; } }' +
+                '@container (min-width: 560px) {' +
+                '  .agvo-form:not(.agvo-items) .agvo-head { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 16px; align-items: end; padding: 8px 0 10px; font-size: 12.5px; line-height: 1.25; color: #515154; text-align: center; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-head span { overflow-wrap: break-word; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-row { display: grid; grid-template-columns: var(--agvo-cols); column-gap: 16px; align-items: center; padding: 6px 0; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-rt { margin: 0; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-opts { display: contents; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o { width: 100%; min-height: 36px; padding: 0; border: 0; border-radius: 8px; background: none; font-size: 0; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o::before { content: ""; display: inline-block; width: 18px; height: 18px; border: 2px solid #8e8e93; border-radius: 50%; vertical-align: middle; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o:hover { background: #f2f2f7; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o.agvo-on { background: none; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-o.agvo-on::before { border-color: #2e6fd9; background: #2e6fd9; box-shadow: inset 0 0 0 3px #fff; }' +
+                '  .agvo-form:not(.agvo-items) .agvo-locked .agvo-o:not(.agvo-on)::before { border-color: #d2d2d7; }' +
+                '}';
+              box.appendChild(css);
+              // the heading and the rows may carry the survey's two marks: **bold** and a backtick word (highlight)
+              var rich = function (el, text) {
+                String(text || '').split('**').forEach(function (part, n) {
+                  var host = n % 2 ? el.appendChild(document.createElement('strong')) : el;
+                  part.split('`').forEach(function (bit, m) {
+                    if (!bit) { return; }
+                    if (m % 2) { host.appendChild(mk('span', 'agvo-hl', bit)); } else { host.appendChild(document.createTextNode(bit)); }
+                  });
+                });
+                return el;
+              };
+              box.appendChild(rich(mk('div', 'agvo-title'), p.title));
+              var head = mk('div', 'agvo-head');
+              head.appendChild(mk('span', '', ''));
+              labels.forEach(function (l) { head.appendChild(mk('span', '', l)); });
+              box.appendChild(head);
+
+              var rowEls = {}, otEls = {}, locked = false, nums = {};
+              var prog = mk('span', 'agvo-prog'), warn = mk('div', 'agvo-warn'), send = mk('button', 'agvo-submit', 'Submit');
+              send.type = 'button';
+              // the rows on show, in order: a follow-up shows while a row it depends on is on show with one of the listed answers
+              var shown = function () {
+                var on = {}, out = [];
+                rows.forEach(function (r) {
+                  var yes = !r.w;
+                  (r.w || []).forEach(function (d) { var a = st.a[d[0]]; if (on[d[0]] && a && d[1].indexOf(a.c) >= 0) { yes = true; } });
+                  if (yes) { on[r.id] = true; out.push(r); }
+                });
+                return out;
+              };
+              var count = function () { return shown().filter(function (r) { return !!st.a[r.id]; }).length; };
+              var paint = function () {
+                var vis = shown(), dropped = false, seen = 0;
+                rows.forEach(function (r) {
+                  var at = vis.indexOf(r);
+                  if (r.g) { rowEls[r.id].classList.add('agvo-grp'); rowEls[r.id].classList.toggle('agvo-g1', at >= 0 && (at === 0 || vis[at - 1].g !== r.g)); }
+                  // a follow-up takes no number, unless it is marked nb: then it is numbered while on show and the questions after it follow on
+                  if (mainOnly) { if (r.w && !r.nb) { rowEls[r.id].classList.add('agvo-fu'); } else if (at >= 0) { seen += 1; } nums[r.id] = seen; }
+                  if (at < 0 && st.a[r.id]) { delete st.a[r.id]; dropped = true; }      // a hidden follow-up keeps no answer
+                  rowEls[r.id].classList.toggle('agvo-off', at < 0);
+                  if (at < 0) { rowEls[r.id].classList.remove('agvo-miss'); }
+                  rowEls[r.id].querySelector('.agvo-n').textContent = (mainOnly ? nums[r.id] : at + 1) + '.';
+                });
+                if (dropped) { save(); }
+                rows.forEach(function (r) {
+                  var a = st.a[r.id];
+                  Array.prototype.forEach.call(rowEls[r.id].querySelectorAll('.agvo-o'), function (b) {
+                    var on = !!a && b.getAttribute('data-c') === a.c;
+                    b.classList.toggle('agvo-on', on);
+                    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                  });
+                });
+                // the optional line: on show only while its option is the answer of a row on show; otherwise empty
+                rows.forEach(function (r) {
+                  if (!r.ot) { return; }
+                  var a = st.a[r.id], on = !!a && a.c === r.ot.c;
+                  if (!on && (st.x[r.id] !== undefined || otEls[r.id].value)) { delete st.x[r.id]; otEls[r.id].value = ''; save(); }
+                  otEls[r.id].classList.toggle('agvo-off', !on);
+                });
+                prog.textContent = count() + ' of ' + vis.length + ' answered';
+              };
+              rows.forEach(function (r, n) {
+                var row = mk('div', 'agvo-row');
+                var rt = mk('div', 'agvo-rt');
+                rt.appendChild(mk('span', 'agvo-n', (n + 1) + '.'));
+                rich(rt, r.text);
+                row.appendChild(rt);
+                var rl = LAB(r), rc = COD(r);
+                var opts = mk('div', items && rl.some(function (l) { return l.length > 24; }) ? 'agvo-opts agvo-one' : 'agvo-opts');
+                rl.forEach(function (l, m) {
+                  var b = mk('button', 'agvo-o', l);
+                  b.type = 'button';
+                  b.setAttribute('data-c', rc[m]);
+                  b.setAttribute('aria-label', plain(r.text) + ': ' + l);
+                  b.onclick = function () {
+                    if (locked) { return; }
+                    st.a[r.id] = { c: rc[m], t: Date.now() };
+                    save();
+                    row.classList.remove('agvo-miss');
+                    if (!box.querySelector('.agvo-miss')) { warn.textContent = ''; }
+                    paint();
+                  };
+                  opts.appendChild(b);
+                  if (r.ot && r.ot.c === rc[m]) {
+                    var inp = mk('input', 'agvo-ot agvo-off');
+                    inp.type = 'text';
+                    inp.maxLength = 200;
+                    inp.placeholder = r.ot.p;
+                    inp.setAttribute('aria-label', l + ': ' + r.ot.p);
+                    inp.setAttribute('autocomplete', 'off');
+                    inp.setAttribute('enterkeyhint', 'done');
+                    inp.value = typeof st.x[r.id] === 'string' ? st.x[r.id].slice(0, 200) : '';
+                    inp.oninput = function () { if (locked) { return; } st.x[r.id] = inp.value; save(); };
+                    // Enter stays in the line: it neither submits the form nor reaches the chat's own input box
+                    var keys = function (e) {
+                      e.stopPropagation();
+                      if (e.key === 'Enter' || e.keyCode === 13) { if (!e.isComposing) { e.preventDefault(); } }
+                    };
+                    inp.addEventListener('keydown', keys);
+                    inp.addEventListener('keypress', keys);
+                    inp.addEventListener('keyup', function (e) { e.stopPropagation(); });
+                    otEls[r.id] = inp;
+                    opts.appendChild(inp);
+                  }
+                });
+                row.appendChild(opts);
+                rowEls[r.id] = row;
+                box.appendChild(row);
+              });
+              var foot = mk('div', 'agvo-foot');
+              foot.appendChild(prog);
+              foot.appendChild(send);
+              box.appendChild(warn);       // above the Submit line, so the chat's input box never covers it
+              box.appendChild(foot);
+
+              var lock = function () {
+                locked = true;
+                box.classList.add('agvo-locked');
+                Array.prototype.forEach.call(box.querySelectorAll('button, input'), function (b) { b.disabled = true; });
+              };
+              send.onclick = function () {
+                if (locked) { return; }
+                var missing = [], vis = shown();
+                vis.forEach(function (r, n) {
+                  var miss = !st.a[r.id];
+                  rowEls[r.id].classList.toggle('agvo-miss', miss);
+                  if (miss) { missing.push(!mainOnly ? n + 1 : (r.w && !r.nb ? 'the follow-up under ' + nums[r.id] : nums[r.id])); }
+                });
+                if (missing.length) {
+                  warn.textContent = (items ? 'Please answer every question. Still to answer: ' : 'Please answer every row. Still to answer: ') + missing.join(', ') + '.';
+                  try { rowEls[vis.filter(function (r) { return !st.a[r.id]; })[0].id].scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+                  return;
+                }
+                var answers = {};
+                vis.forEach(function (r) {
+                  answers[r.id] = { c: st.a[r.id].c, t: st.a[r.id].t };
+                  if (r.ot && st.a[r.id].c === r.ot.c) {      // the optional text, trimmed; an empty string when nothing was typed
+                    var tx = String(otEls[r.id].value || '').trim().slice(0, 200);
+                    answers[r.id].x = tx;
+                    otEls[r.id].value = tx;
+                    st.x[r.id] = tx;
+                  }
+                });
+                st.done.push(String(p.k));
+                save();
+                lock();
+                var label = vis.map(function (r, n) { return (n + 1) + '. ' + plain(r.text) + ': ' + LAB(r)[COD(r).indexOf(answers[r.id].c)]; }).join('; ');
+                window.voiceflow.chat.interact({ type: 'event', payload: { event: { name: 'agvo_form_submit', form: p.id, k: p.k, answers: answers, shown: t0, sent: Date.now() }, label: label } });
+              };
+
+              paint();
+              // one live copy per form: a newer showing (after a typed question or a relaunch) retires the older one,
+              // and a showing that was already submitted comes back read-only when the chat history is replayed
+              window.__agvoForms = window.__agvoForms || {};
+              if (window.__agvoForms[p.id]) { try { window.__agvoForms[p.id](); } catch (e) {} }
+              window.__agvoForms[p.id] = lock;
+              if (st.done.indexOf(String(p.k)) >= 0) { lock(); }
+              o.element.appendChild(box);
+            }
+          }],
+          persistence: 'localStorage',
+          // Chat text in the device's own sans-serif. The widget only writes this value into its CSS and loads
+          // no font file, so a single web-font name with no fallback shows as the browser default (serif on iOS).
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+          // Tighter lists; hide the header restart control and the end-of-chat "Start new chat" button.
+          stylesheet: 'data:text/css;base64,' + btoa(
+            '.vfrc-message--extension-agvo_form { display: block; width: 100%; max-width: 100%; padding: 0; background: none; }' +
+            '.vfrc-message--extension-agvo_form > span { display: block; width: 100%; }' +
+            '.vfrc-message--extension-agvo_form, .vfrc-message--extension-agvo_form button { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }' +
+            '.vfrc-message .markdown ol, .vfrc-message .markdown ul { margin: 4px 0; padding-left: 22px; }' +
+            // Inline code (the backtick words that tell the cars apart) shows as a light highlight, not a code box.
+            '.vfrc-message .markdown img { display: block; width: 100%; max-width: 420px; height: auto; margin: 6px 0; border-radius: 12px; }' +
+            '.vfrc-message .markdown code { font-family: inherit; font-size: inherit; background: #fff3bf; color: #1d1d1f; padding: 0 1px; border-radius: 3px; border: 0; }' +
+            // Phone width: messages and buttons one step larger (16px instead of the widget's 14px).
+            '@media (max-width: 600px) { .vfrc-message, .vfrc-message .markdown, .vfrc-button { font-size: 16px; line-height: 1.45; } }' +
+            '.vfrc-header--actions, .vfrc-header .vfrc-button, #restart-chat, .vfrc-prompt { display: none !important; }' +
+            '.vfrc-footer__start-button, #vfrc-start-chat { display: none !important; }')
+        },
+        render: { mode: 'embedded', target: d.getElementById('vf') },
+        autostart: true
+      });
+    };
+    v.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
+    v.type = 'text/javascript';
+    s.parentNode.insertBefore(v, s);
+  })(document, 'script');
+})();
+</script>
+
+</body>
+</html>
