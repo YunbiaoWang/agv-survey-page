@@ -256,7 +256,8 @@
                 rich(rt, r.text);
                 row.appendChild(rt);
                 var rl = LAB(r), rc = COD(r);
-                var opts = mk('div', items && rl.some(function (l) { return l.length > 24; }) ? 'agvo-opts agvo-one' : 'agvo-opts');
+                // long options one to a line, unless the row asks for two columns (r.two: the monthly fee of a car's form)
+                var opts = mk('div', items && !r.two && rl.some(function (l) { return l.length > 24; }) ? 'agvo-opts agvo-one' : 'agvo-opts');
                 rl.forEach(function (l, m) {
                   var b = mk('button', 'agvo-o', l);
                   b.type = 'button';
