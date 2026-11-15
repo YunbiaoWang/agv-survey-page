@@ -158,7 +158,6 @@
                 '.agvo-locked .agvo-submit, .agvo-locked .agvo-warn { display: none; }' +
                 // a car's form: a question hidden until its condition holds; long options one to a line
                 '.agvo-row.agvo-off { display: none; }' +
-                '.agvo-opts.agvo-one { grid-template-columns: 1fr; }' +
                 '.agvo-items .agvo-rt { margin-bottom: 8px; }' +
                 '.agvo-row.agvo-fu { border-top: 0; margin: -2px 0 8px 6px; padding: 2px 0 2px 12px; border-left: 3px solid #d2d2d7; font-size: 0.94em; }' +
                 '.agvo-row.agvo-fu .agvo-n { display: none; }' +
@@ -257,7 +256,7 @@
                 row.appendChild(rt);
                 var rl = LAB(r), rc = COD(r);
                 // long options one to a line, unless the row asks for two columns (r.two: the monthly fee of a car's form)
-                var opts = mk('div', items && !r.two && rl.some(function (l) { return l.length > 24; }) ? 'agvo-opts agvo-one' : 'agvo-opts');
+                var opts = mk('div', 'agvo-opts');      // every row sets its options out in two columns of equal width
                 rl.forEach(function (l, m) {
                   var b = mk('button', 'agvo-o', l);
                   b.type = 'button';
@@ -358,6 +357,14 @@
             '.vfrc-message--extension-agvo_form { display: block; width: 100%; max-width: 100%; padding: 0; background: none; }' +
             '.vfrc-message--extension-agvo_form > span { display: block; width: 100%; }' +
             '.vfrc-message--extension-agvo_form, .vfrc-message--extension-agvo_form button { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }' +
+            // the answer buttons of a single question look like the options of a form: white ovals of equal width, two columns
+            '.vfrc-system-response--actions { display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }' +
+            '.vfrc-system-response--action { min-width: 0; margin: 0 !important; display: flex !important; }' +
+            '.vfrc-system-response--actions .vfrc-system-response--action .vfrc-button { box-sizing: border-box; flex: 1 1 auto; width: 100% !important; max-width: none !important; height: auto !important; min-height: 36px; margin: 0 !important; padding: 6px 8px !important; display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal !important; overflow-wrap: anywhere; border: 1px solid #b9b9c0 !important; border-radius: 18px !important; background: #fff !important; color: #1d1d1f !important; box-shadow: none !important; font-size: 13px !important; font-weight: 400 !important; line-height: 1.2 !important; cursor: pointer; }' +
+            '.vfrc-system-response--actions .vfrc-system-response--action .vfrc-button:hover { background: #f2f2f7 !important; border-color: #8e8e93 !important; }' +
+            '.vfrc-system-response--actions .vfrc-system-response--action .vfrc-button:focus-visible { outline: 2px solid #2e6fd9 !important; outline-offset: 1px; }' +
+            '.vfrc-system-response--actions .vfrc-system-response--action .vfrc-button:active { background: #2e6fd9 !important; border-color: #2e6fd9 !important; color: #fff !important; }' +
+            '@media (max-width: 600px) { .vfrc-system-response--actions .vfrc-system-response--action .vfrc-button { font-size: 15px !important; } }' +
             '.vfrc-message .markdown ol, .vfrc-message .markdown ul { margin: 4px 0; padding-left: 22px; }' +
             // Inline code (the backtick words that tell the cars apart) shows as a light highlight, not a code box.
             '.vfrc-message .markdown img { display: block; width: 100%; max-width: 420px; height: auto; margin: 6px 0; border-radius: 12px; }' +
